@@ -27,6 +27,7 @@ double rk4(double x0, double y0, double h, double (*fun)(double, double),double 
         k4 = h * fun(x0 + h, y0 + k3);
         y1 = y0 + (k1+2.*k2+2.*k3+k4)/6.;
         y0=y1;
+        x0=x0+h
     }
     return y1;
 }
