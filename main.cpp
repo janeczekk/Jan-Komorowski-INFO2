@@ -1,81 +1,57 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "rk4.cpp"//Zmodyfikowana
-double lambda=2;
-double funkcja_prawa(double t,double y);
-double funkcja_prawdziwa(double t0, double y, double t);
-double euler(double y0, double t0, double h, double (*fun)(double,double), double t);
-double blad(double numerycznie, double analitycznie);
+#include "rk4.cpp"
+void rhs_fun(double t, double *X,double *F);
+int n =3;
+double g = 9.81;
+double l = 1.0;
+double m = 10;
+double s = 1;
+double c = 0.9;
+double e0 = 0;
+double v0= 3;
+double ro= 1.2;
+
+
 int main()
 {
-    int a;
-    double y0,t0,h,t,fp,eu,rk,bleu,blrk;
-    FILE *f;
-    printf("podaj wartosc y0\n");
-    scanf("%lf",&y0);
-    printf("podaj wartosc t0\n");
-    scanf("%lf",&t0);
-    printf("Wybierz tryb działania\n0-normalny\t1-ulepszony\n");
-    scanf("%d",&a);
-    switch (a){
-        case 0:
-            printf("podaj skok h\n");
-            scanf("%lf",&h);
-            printf("podaj t\n");
-            scanf("%lf",&t);
-             fp = funkcja_prawdziwa(t0, y0, t);
-             eu = euler(y0, t0, h, funkcja_prawa, t);
-             rk = rk4(t0, y0, h, funkcja_prawa,t);
-             bleu = blad(eu, fp);
-             blrk = blad(rk,fp);
-            printf("fp=%lf\neu=%lf\tbleu=%lf\nrk=%lf\tblrk=%lf\n", fp, eu, bleu,rk,blrk);
+    FILE*f;
+    f=fopen("wartosci.txt","w");
+    double t,tk,h,a0,w0;
+    double *ALFA,*ALFA1;
+    ALFA=(double*)malloc(n * sizeof(double));
+    ALFA1=(double*)malloc(n * sizeof(double));
+    printf("Podaj a0\n");
+    scanf("%lf",&a0);
+    printf("Podaj w0\n");
+    scanf("%lf",&w0);
+    printf("Podaj h\n");
+    scanf("%lf",&h);
+    printf("Podaj tk\n");
+    scanf("%lf",&tk);
+    ALFA[0]= a0;
+    ALFA[1]= w0;
+    ALFA[2]= e0;
+    double Emech;
+    for(t=0;t<=tk; t = t+h)
+    {
 
-            break;
-        case 1:
-            printf("Podaj chwile tk\n");
-            scanf("%lf",&t);
-            fp = funkcja_prawdziwa(t0, y0, t);
-            f=fopen("dane.txt","w");
-            fprintf(f,"N\t\th\t\tbleu\t\tblrk\n");
-            for (int i = 0; i < 10; ++i) {
-                double N = pow(2,i);
-                h=(t-t0)/N;
-                eu = euler(y0, t0, h, funkcja_prawa, t);
-                rk = rk4(t0, y0, h, funkcja_prawa,t);
-                bleu = blad(eu, fp);
-                blrk = blad(rk,fp);
-                printf("N=%lf\th=%lf\tbleu=%lf\tblrk=%lf\n",N,h,bleu,blrk);
-                fprintf(f,"%lf\t%lf\t%lf\t%lf\n",N,h,bleu,blrk);
-            }
-            fclose(f);
-            break;
-
+        vrk4(t, ALFA, h, n, rhs_fun, ALFA1);
+        fprintf(f, "%lf\t%lf\t%lf\n",t,ALFA[0], ALFA[1]);
+        ALFA[0] = ALFA1[0];
+        ALFA[1] = ALFA1[1];
+        ALFA[2] = ALFA[2];
+        Emech= 1/2m*pow(ALFA[1])-m*ALFA[0]*g;
     }
     return 0;
 }
-double funkcja_prawa(double t, double y)
-{
-    return lambda*y;
-}
-double funkcja_prawdziwa(double t0, double y, double t)
-{
-    double power = lambda*(t-t0);
-    return y*exp(power);
-}
-double euler(double y0, double t0, double h, double (*fun)(double,double), double t)
-{
-    double t1,y1;
-    double q = fabs((t-t0)/h);
-    for (int i = 0; i <q; ++i) {
-        t1=t0+h;
-        y1=y0+h*fun(t0,y0);
-        t0=t1;
-        y0=y1;
-    }
-    return y1;
-}
-double blad(double numerycznie, double analitycznie)
-{
-    return fabs(analitycznie - numerycznie) / fabs(analitycznie);
-}
 
+
+void rhs_fun(double t, double *X,double *F)
+
+{
+    F[0] = t*X[1];
+    F[1] = (-g*sin(X[0])+v0*sin(t))/l;
+    F[2]= (g-ro/2*(g*g+v0*sin(t)*v0*sin(t))*s*c)/m*l;
+}
